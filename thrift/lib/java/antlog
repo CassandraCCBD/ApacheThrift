@@ -1,0 +1,47 @@
+Buildfile: /root/Apache Thrift/thrift/lib/java/build.xml
+
+setup.init:
+
+mvn.ant.tasks.check:
+
+proxy:
+
+mvn.ant.tasks.download:
+      [get] Getting: http://repo1.maven.org/maven2/org/apache/maven/maven-ant-tasks/2.1.3/maven-ant-tasks-2.1.3.jar
+      [get] To: /root/Apache Thrift/thrift/lib/java/build/tools/maven-ant-tasks-2.1.3.jar
+      [get] Not modified - so not downloaded
+
+mvn.init:
+Unable to obtain resource from /root/Apache Thrift/thrift/lib/java/build/tools/maven-ant-tasks-2.1.3.jar: java.util.zip.ZipException: error in opening zip file
+  [typedef] Unable to obtain resource from /root/Apache Thrift/thrift/lib/java/build/tools/maven-ant-tasks-2.1.3.jar: 
+  [typedef] java.util.zip.ZipException: error in opening zip file
+  [typedef] 	at java.util.zip.ZipFile.open(Native Method)
+  [typedef] 	at java.util.zip.ZipFile.<init>(ZipFile.java:215)
+  [typedef] 	at java.util.zip.ZipFile.<init>(ZipFile.java:145)
+  [typedef] 	at java.util.jar.JarFile.<init>(JarFile.java:154)
+  [typedef] 	at java.util.jar.JarFile.<init>(JarFile.java:118)
+  [typedef] 	at org.apache.tools.ant.AntClassLoader.getResourceURL(AntClassLoader.java:1026)
+  [typedef] 	at org.apache.tools.ant.AntClassLoader$ResourceEnumeration.findNextResource(AntClassLoader.java:151)
+  [typedef] 	at org.apache.tools.ant.AntClassLoader$ResourceEnumeration.<init>(AntClassLoader.java:112)
+  [typedef] 	at org.apache.tools.ant.AntClassLoader.findResources(AntClassLoader.java:966)
+  [typedef] 	at org.apache.tools.ant.AntClassLoader.getNamedResources(AntClassLoader.java:934)
+  [typedef] 	at org.apache.tools.ant.loader.AntClassLoader5.getResources(AntClassLoader5.java:58)
+  [typedef] 	at org.apache.tools.ant.taskdefs.Definer.resourceToURLs(Definer.java:360)
+  [typedef] 	at org.apache.tools.ant.taskdefs.Definer.execute(Definer.java:246)
+  [typedef] 	at org.apache.tools.ant.UnknownElement.execute(UnknownElement.java:293)
+  [typedef] 	at sun.reflect.GeneratedMethodAccessor4.invoke(Unknown Source)
+  [typedef] 	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+  [typedef] 	at java.lang.reflect.Method.invoke(Method.java:606)
+  [typedef] 	at org.apache.tools.ant.dispatch.DispatchUtils.execute(DispatchUtils.java:106)
+  [typedef] 	at org.apache.tools.ant.Task.perform(Task.java:348)
+  [typedef] 	at org.apache.tools.ant.Target.execute(Target.java:435)
+  [typedef] 	at org.apache.tools.ant.Target.performTasks(Target.java:456)
+  [typedef] 	at org.apache.tools.ant.Project.executeSortedTargets(Project.java:1405)
+  [typedef] 	at org.apache.tools.ant.Project.executeTarget(Project.java:1376)
+  [typedef] 	at org.apache.tools.ant.helper.DefaultExecutor.executeTargets(DefaultExecutor.java:41)
+  [typedef] 	at org.apache.tools.ant.Project.executeTargets(Project.java:1260)
+  [typedef] 	at org.apache.tools.ant.Main.runBuild(Main.java:853)
+  [typedef] 	at org.apache.tools.ant.Main.startAnt(Main.java:235)
+  [typedef] 	at org.apache.tools.ant.launch.Launcher.run(Launcher.java:285)
+  [typedef] 	at org.apache.tools.ant.launch.Launcher.main(Launcher.java:112)
+  [typedef] Could not load definitions from resource org/apache/maven/artifact/ant/antlib.xml. It could not be found.
