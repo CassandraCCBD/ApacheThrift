@@ -11,11 +11,13 @@ public class Profiling
 	static final AtomicInteger numRead = new AtomicInteger(0);
 	static final AtomicInteger numWrite= new AtomicInteger(0);
 	static final AtomicInteger numScan= new AtomicInteger(0);
+	static final AtomicInteger numTot= new AtomicInteger(0);
 	private static Logger logger = LoggerFactory.getLogger(Profiling.class);
 	
 	public static int incrementAndGetRead()
-	{
+	{	
 		numRead.incrementAndGet();
+		numTot.incrementAndGet();
 		logger.debug("Number of reads happening right now " + numRead.get());
 		return numRead.get();
 	}
@@ -30,6 +32,7 @@ public class Profiling
 		return numScan.get();
 	}
 
+			 
 	public static int decrementRead()
 	{
 		numRead.decrementAndGet();
@@ -46,7 +49,7 @@ public class Profiling
 		numWrite.decrementAndGet();
 		return numWrite.get();
 	}
-	public static void writeToFile(int tag, int currentops, long responseTime, int endops)
+	public static void writeToFile(int tag, int currentops, long responseTime, int endops, int numtot)
 	{
 		logger.debug("Going to Write to file");
 		if (tag==1) //1 is for read 
@@ -54,7 +57,7 @@ public class Profiling
 	        	try
 			{
 				PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter("/root/ResponseRead", true))) ;
-				out.println(currentops+ " " + " " + endops + " " + responseTime);
+				out.println(numtot + " " + currentops+ " " + endops + " " + responseTime);
 				logger.debug("Writing this to file "+ currentops+ " " + " " + endops + " " + responseTime);
 				out.close();
 				logger.debug("Write Worked in Thrift");

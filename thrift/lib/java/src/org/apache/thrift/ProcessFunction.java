@@ -4,6 +4,7 @@
 package org.apache.thrift;
 
 import java.util.concurrent.TimeUnit;
+import java.util.Vector;
 
 import org.apache.thrift.protocol.TMessage;
 import org.apache.thrift.protocol.TMessageType;
@@ -13,6 +14,27 @@ import org.apache.thrift.Profiling;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+class GetLibraries {
+	private static final Logger logger = LoggerFactory.getLogger(GetLibraries.class);
+	private static java.lang.reflect.Field LIBRARIES;	
+	public static String[] getLoadedLibraries(final ClassLoader loader) 
+	{
+		try 
+		{
+			LIBRARIES = ClassLoader.class.getDeclaredField("loadedLibraryNames");
+			LIBRARIES.setAccessible(true);
+			 final Vector<String> libraries = (Vector<String>) LIBRARIES.get(loader);
+		         return libraries.toArray(new String[] {});
+		}
+		catch (Exception e)
+		{
+			logger.debug("Exception: ", e);
+			String[] array = new String[1];
+			array[0] = "Error";
+			return array;
+		}
+        }
+}
 public abstract class ProcessFunction<I, T extends TBase> {
   private final String methodName;
 
@@ -22,21 +44,59 @@ public abstract class ProcessFunction<I, T extends TBase> {
     this.methodName = methodName;
   }
 
+  public native int HelloWorld();
+  static 
+  {
+  	LOGGER.debug("Going to load the native library");
+	try 
+	{
+		System.loadLibrary("hello");
+	}
+	catch (Exception e)
+	{
+		LOGGER.debug("couldn't load the library");
+	}
+  }
+  public int returnThread()
+  {	
+  	final String[] libraries = GetLibraries.getLoadedLibraries(ClassLoader.getSystemClassLoader());
+	LOGGER.debug("CASSANDRA TEAM:List of libraries");
+	for (int i=0;i<libraries.length;i++)
+				LOGGER.debug(libraries[i]);
+  	int id = HelloWorld();
+	LOGGER.debug("Got the id" + id);
+	return id;
+  }
+
   public final void process(int seqid, TProtocol iprot, TProtocol oprot, I iface) throws TException {
     T args = getEmptyArgsInstance();
     long startTime=0, endTime=0 ;
+    int numtot=0;
     int currentops=0, tag=0, endops=0 ;// stores the current number of reads/writes
     try {
       args.read(iprot);
       LOGGER.debug("Cassandra Team: Args {}", args);
+      int id = returnThread();
+      LOGGER.debug("Thread ID in Thrift - " + id);
       // initialize start time here 
       startTime =TimeUnit.NANOSECONDS.toMillis(System.nanoTime());
+      numtot=Profiling.numTot.get();
       // incrementAndGetRead or Write or Scan
+      LOGGER.debug("args.getQosReq {} ",args.getQosReq());
       if (args.getQosReq()==10)
       {
       	tag=1;
-	while (Profiling.numRead.get()>5)
-	{}
+/*	while (Profiling.numRead.get()>5)
+	{} */
+	//Adding to Cgroups
+	try{
+		LOGGER.debug("Sending to group1 ");
+		Runtime.getRuntime().exec("cgclassify -g cpu:/group1 "+id);
+	}catch(Exception e){
+		LOGGER.debug("not sent to cgroup "+e);
+	}
+
+
       	currentops=Profiling.incrementAndGetRead();
       }
       else if (args.getQosReq()==15)
@@ -85,7 +145,7 @@ public abstract class ProcessFunction<I, T extends TBase> {
 	    endops=Profiling.decrementWrite();
     else if (tag==3)
 	    endops=Profiling.decrementScan();
-    Profiling.writeToFile(tag,currentops,responseTime, endops);
+    Profiling.writeToFile(tag,currentops,responseTime, endops,numtot);
     if(!isOneway()) {
       oprot.writeMessageBegin(new TMessage(getMethodName(), TMessageType.REPLY, seqid));
       result.write(oprot);
