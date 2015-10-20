@@ -8,12 +8,15 @@ import java.io.*;
 
 public class Profiling
 {
-	static final AtomicInteger numRead = new AtomicInteger(0);
-	static final AtomicInteger numWrite= new AtomicInteger(0);
-	static final AtomicInteger numScan= new AtomicInteger(0);
-	static final AtomicInteger numTot= new AtomicInteger(0);
+	public static final AtomicInteger numRead = new AtomicInteger(0);
+	public static final AtomicInteger numWrite= new AtomicInteger(0);
+	public static final AtomicInteger numScan= new AtomicInteger(0);
+	public static final AtomicInteger numTot= new AtomicInteger(0);
 	private static Logger logger = LoggerFactory.getLogger(Profiling.class);
-	
+	public static final AtomicInteger localRead = new AtomicInteger(0);
+	public static final AtomicInteger localScan= new AtomicInteger(0);
+	public static final AtomicInteger totalRead = new AtomicInteger(0);
+	public static final AtomicInteger totalScan = new AtomicInteger(0);
 	public static int incrementAndGetRead()
 	{	
 		numRead.incrementAndGet();
@@ -21,17 +24,30 @@ public class Profiling
 		logger.debug("Number of reads happening right now " + numRead.get());
 		return numRead.get();
 	}
+	
 	public static int incrementAndGetWrite()
 	{
 		numWrite.incrementAndGet();
 		return numWrite.get();
 	}
+
+	public static int incrementAndGetLocalRead()
+	{
+		localRead.incrementAndGet();
+		return localRead.get();
+	}
+
 	public static int incrementAndGetScan()
 	{
 		numScan.incrementAndGet();
 		return numScan.get();
 	}
 
+	public static int decrementLocalRead()
+	{
+		localRead.decrementAndGet();
+		return localRead.get();
+	}
 			 
 	public static int decrementRead()
 	{
@@ -39,6 +55,8 @@ public class Profiling
 		logger.debug("Number of reads happening right now (in decrement) " + numRead.get());
 		return numRead.get();
 	}
+
+
 	public static int decrementScan()
 	{
 		numScan.decrementAndGet();
@@ -49,7 +67,7 @@ public class Profiling
 		numWrite.decrementAndGet();
 		return numWrite.get();
 	}
-	public static void writeToFile(int tag, int currentops, long responseTime, int endops, int numtot)
+	public static void writeToFile(int tag, int currentRead, int currentWrite, int currentScan, long responseTime, int currentScanLoc, int currentReadLoc, int nonLocalRead)
 	{
 		logger.debug("Going to Write to file");
 		if (tag==1) //1 is for read 
@@ -57,8 +75,7 @@ public class Profiling
 	        	try
 			{
 				PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter("/root/ResponseRead", true))) ;
-				out.println(numtot + " " + currentops+ " " + endops + " " + responseTime);
-				logger.debug("Writing this to file "+ currentops+ " " + " " + endops + " " + responseTime);
+				out.println(currentRead + " " + currentWrite + " " + currentScan + " " + currentReadLoc + " " + currentScanLoc + " " + nonLocalRead + " " + responseTime);
 				out.close();
 				logger.debug("Write Worked in Thrift");
 		  	}
@@ -72,7 +89,7 @@ public class Profiling
 	        	try
 			{
 				PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter("/root/ResponseWrite", true))) ;
-				out.println(currentops+ " " + responseTime);
+				out.println(currentRead + " " + currentWrite + " " + currentScan + " " + currentReadLoc + " " + currentScanLoc + " " + responseTime);
 				out.close();
 				logger.debug("Write Worked in Thrift");
 		  	}
@@ -86,7 +103,7 @@ public class Profiling
 	        	try
 			{
 				PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter("/root/ResponseScan", true))) ;
-				out.println(currentops+ " " + responseTime);
+				out.println(currentRead + " " + currentWrite + " " + currentScan + " " + currentReadLoc + " " + currentScanLoc + " " + responseTime);
 				out.close();
 				logger.debug("Write Worked in Thrift");
 		  	}
@@ -97,5 +114,21 @@ public class Profiling
 		}
 	}
 
+	public static void writeFileStuff(int numRead,int numMessage, long responseTime)
+	{
+		logger.debug("Going to Write Read stuff to file");
+	        	try
+			{
+				PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter("/root/ResponseReadStage", true))) ;
+				out.println(numRead + " " + numMessage + " " + responseTime);
+				out.close();
+				logger.debug("Read Write Worked in Thrift (nice pun :P)");
+		  	}
+			catch (IOException e)
+			{
+				logger.debug("FILE ISSUE");
+			}
+		
+	}
 }
 
