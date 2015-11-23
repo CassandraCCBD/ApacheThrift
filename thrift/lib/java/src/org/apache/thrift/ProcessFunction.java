@@ -11,8 +11,15 @@ import org.apache.thrift.protocol.TMessageType;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.protocol.TProtocolException;
 import org.apache.thrift.Profiling;
+import org.apache.thrift.Profiler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+
+/* adding some things so that we add things to ScanStage */
+/* this didn't work cuz Cassandra isn't in this thing's classpath
+ * We're going to try this from Cassandra's end and try and make an object from there */
+//import org.apache.cassandra.concurrent.*;
 
 class GetLibraries {
 	private static final Logger logger = LoggerFactory.getLogger(GetLibraries.class);
@@ -43,8 +50,11 @@ public abstract class ProcessFunction<I, T extends TBase> {
   public ProcessFunction(String methodName) {
     this.methodName = methodName;
   }
-
   public native int HelloWorld();
+  public static Profiler Read;
+  public static Profiler Scan;
+  public static Profiler Write;
+  public static PredictionClass threadObject;
   static 
   {
   	LOGGER.debug("Going to load the native library");
@@ -56,6 +66,20 @@ public abstract class ProcessFunction<I, T extends TBase> {
 	{
 		LOGGER.debug("couldn't load the library");
 	}
+	Read = new Profiler();
+	Scan= new Profiler();
+	Write= new Profiler();
+	LOGGER.debug("Going to submit the thread to ScanStage");
+	try 
+	{
+		throw new RuntimeException("Trying to see who calls ProcessFunction's Static");
+	}
+	catch(Exception e)
+	{
+		LOGGER.debug("StackTrace ", e);
+	}
+	/*threadObject = new PredictionClass();
+	StageManager.getStage(Stage.SCAN).execute(threadObject);*/
   }
   public int returnThread()
   {	
@@ -73,7 +97,7 @@ public abstract class ProcessFunction<I, T extends TBase> {
     long startTime=0, endTime=0 ;
     int numtot=0;
     int currentRead=0, tag=0, endops=0 , currentWrite=0, currentScan=0;// stores the current number of reads/writes
-    int currentLocal=0, currentScanLocal=0, currentNonLocalRead=0;
+    int currentLocal=0, currentScanLocal=0, currentNonLocalRead=0, currentReadStage=0;
     try {
       args.read(iprot);
       LOGGER.debug("Cassandra Team: Args {}", args);
@@ -88,52 +112,62 @@ public abstract class ProcessFunction<I, T extends TBase> {
       {
       	tag=1;
 	//Adding to Cgroups
-	try{
+	/*try{
 		LOGGER.debug("Sending to group1 ");
 		Runtime.getRuntime().exec("cgclassify -g cpu:/group1 "+id);
 	}catch(Exception e){
 		LOGGER.debug("not sent to cgroup "+e);
-	}
+	}*/
+	/* initializing all the Profiling stats */
       	currentRead=Profiling.incrementAndGetRead();
 	currentWrite=Profiling.numWrite.get();
 	currentScan=Profiling.numScan.get();
-	currentLocal=Profiling.localRead.get();
+	/*currentLocal=Profiling.localRead.get();
 	currentScanLocal= Profiling.localScan.get();
 	currentNonLocalRead = Profiling.totalRead.get() - Profiling.localRead.get();
+	currentReadStage = Profiling.numRead.get();*/
       }
       else if (args.getQosReq()==15)
       {
       	tag=3;
 	//Adding to Cgroups
-	try{
+	/* we make all scans sleep to see if it makes a difference for Reads */
+	try 
+	{
+		Thread.currentThread().sleep(5000);
+	}
+	catch (Exception e)
+	{
+	}
+/*	try{
 		LOGGER.debug("Sending to group3 ");
 		Runtime.getRuntime().exec("cgclassify -g cpu:/group3 "+id);
 	}catch(Exception e){
 		LOGGER.debug("not sent to cgroup "+e);
-	}
+	}*/
       	currentScan=Profiling.incrementAndGetScan();
 	currentWrite=Profiling.numWrite.get();
 	currentRead=Profiling.numRead.get();
-	currentLocal=Profiling.localRead.get();
+	/*currentLocal=Profiling.localRead.get();
 	currentScanLocal= Profiling.localScan.get();
-	currentNonLocalRead = Profiling.totalRead.get() - Profiling.localRead.get();
+	currentNonLocalRead = Profiling.totalRead.get() - Profiling.localRead.get();*/
       }
       else if (args.getQosReq()==5)
       {
       	tag=2;
 	//Adding to Cgroups
-	try{
+/*	try{
 		LOGGER.debug("Sending to group2 ");
 		Runtime.getRuntime().exec("cgclassify -g cpu:/group2 "+id);
 	}catch(Exception e){
 		LOGGER.debug("not sent to cgroup "+e);
-	}
+	}*/
       	currentWrite=Profiling.incrementAndGetWrite();
 	currentRead=Profiling.numRead.get();
 	currentScan=Profiling.numScan.get();
-	currentLocal=Profiling.localRead.get();
+	/*currentLocal=Profiling.localRead.get();
 	currentScanLocal= Profiling.localScan.get();
-	currentNonLocalRead = Profiling.totalRead.get() - Profiling.localRead.get();
+	currentNonLocalRead = Profiling.totalRead.get() - Profiling.localRead.get();*/
       }
       	
     } catch (TProtocolException e) {
@@ -162,16 +196,26 @@ public abstract class ProcessFunction<I, T extends TBase> {
     }
     // initialize endTime
     endTime =TimeUnit.NANOSECONDS.toMillis(System.nanoTime());
-    long responseTime = endTime -startTime;
+    int responseTime = (int) (endTime -startTime);
     // call the writeToFile method
     LOGGER.debug("going to call the write function");
     if (tag==1)
+    {
+    	    Read.add_item(currentRead, currentWrite, currentScan, responseTime,tag);
 	    endops=Profiling.decrementRead();
+    }
     else if (tag==2)
+    {
+    	    Write.add_item(currentRead, currentWrite, currentScan, responseTime, tag);
 	    endops=Profiling.decrementWrite();
+    }
     else if (tag==3)
+    {
+    	    Scan.add_item(currentRead, currentWrite, currentScan, responseTime,tag);
 	    endops=Profiling.decrementScan();
-    Profiling.writeToFile(tag,currentRead, currentWrite, currentScan, responseTime, currentLocal, currentScanLocal, currentNonLocalRead);
+    }
+    /*Profiling.writeToFile(tag,currentRead, currentWrite, currentScan, responseTime, currentLocal, currentScanLocal, currentReadStage);*/
+
     if(!isOneway()) {
       oprot.writeMessageBegin(new TMessage(getMethodName(), TMessageType.REPLY, seqid));
       result.write(oprot);
