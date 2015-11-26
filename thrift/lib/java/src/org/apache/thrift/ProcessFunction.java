@@ -12,6 +12,7 @@ import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.protocol.TProtocolException;
 import org.apache.thrift.Profiling;
 import org.apache.thrift.Profiler;
+import org.apache.thrift.GlobalProfiler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,6 +54,9 @@ public abstract class ProcessFunction<I, T extends TBase> {
   public native int HelloWorld();
   public static Profiler Read;
   public static Profiler Scan;
+  public static GlobalProfiler GScan;
+  public static GlobalProfiler GRead;
+  public static GlobalProfiler GWrite;
   public static Profiler Write;
   public static PredictionClass threadObject;
   static 
@@ -69,6 +73,9 @@ public abstract class ProcessFunction<I, T extends TBase> {
 	Read = new Profiler();
 	Scan= new Profiler();
 	Write= new Profiler();
+	GRead = new GlobalProfiler();
+	GScan= new GlobalProfiler();
+	GWrite= new GlobalProfiler();
 	LOGGER.debug("Going to submit the thread to ScanStage");
 	try 
 	{
@@ -134,7 +141,7 @@ public abstract class ProcessFunction<I, T extends TBase> {
 	/* we make all scans sleep to see if it makes a difference for Reads */
 	try 
 	{
-		Thread.currentThread().sleep(5000);
+		Thread.currentThread().sleep(10000);
 	}
 	catch (Exception e)
 	{
@@ -201,16 +208,19 @@ public abstract class ProcessFunction<I, T extends TBase> {
     LOGGER.debug("going to call the write function");
     if (tag==1)
     {
+    	    GRead.addToList((long)responseTime);
     	    Read.add_item(currentRead, currentWrite, currentScan, responseTime,tag);
 	    endops=Profiling.decrementRead();
     }
     else if (tag==2)
     {
+    	    GWrite.addToList((long)responseTime);
     	    Write.add_item(currentRead, currentWrite, currentScan, responseTime, tag);
 	    endops=Profiling.decrementWrite();
     }
     else if (tag==3)
     {
+    	    GScan.addToList((long)responseTime);
     	    Scan.add_item(currentRead, currentWrite, currentScan, responseTime,tag);
 	    endops=Profiling.decrementScan();
     }

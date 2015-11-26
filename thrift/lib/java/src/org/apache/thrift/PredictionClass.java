@@ -41,54 +41,80 @@ public class PredictionClass implements Runnable
 		{
 			try
 			{
+				Thread.sleep(100);
+			}
+			catch(Exception e)
+			{
+				logger.debug("ERROR in sleeping", e);
+			}
+			try
+			{
 				/** we acquire the semaphore to do the calculation 
 				 */
 				sem.acquire();
 			}
 			catch(Exception e)
-			{}
+			{
+				logger.debug("Error in acquiring semaphore", e);
+			}
 			logger.debug(" In run of Predict ");
 			//Uninterruptibles.sleepUninterruptibly(1000, TimeUnit.MILLISECONDS);    
-			argument = argument%5;
-			try
+			try 
 			{
-				Thread.sleep(100);
+				argument = argument%5;
+				for (ArrayList<Integer> key: ProcessFunction.Read.mainList.keySet())
+				{
+					ArrayList<Float> valueList = new ArrayList<Float>();
+					average = ProcessFunction.Read.get_avg(ProcessFunction.Read.mainList.get(key));
+					stddev = ProcessFunction.Read.get_std_dev(ProcessFunction.Read.mainList.get(key), average);
+					valueList.add(average);
+					valueList.add(stddev);
+					valueList.add((float)(ProcessFunction.Read.mainList.get(key).size()));
+					Statistics.readPredictionList.put(key, valueList);
+				}
+
+				for (ArrayList<Integer> key: ProcessFunction.Write.mainList.keySet())
+				{
+					ArrayList<Float> valueList = new ArrayList<Float>();
+					average = ProcessFunction.Write.get_avg(ProcessFunction.Write.mainList.get(key));
+					stddev = ProcessFunction.Write.get_std_dev(ProcessFunction.Write.mainList.get(key), average);
+					valueList.add(average);
+					valueList.add(stddev);
+					valueList.add((float)(ProcessFunction.Write.mainList.get(key).size()));
+					Statistics.writePredictionList.put(key, valueList);
+				}
+
+				for (ArrayList<Integer> key: ProcessFunction.Scan.mainList.keySet())
+				{
+					ArrayList<Float> valueList = new ArrayList<Float>();
+					average = ProcessFunction.Scan.get_avg(ProcessFunction.Scan.mainList.get(key));
+					stddev = ProcessFunction.Scan.get_std_dev(ProcessFunction.Scan.mainList.get(key), average);
+					valueList.add(average);
+					valueList.add(stddev);
+					valueList.add((float)(ProcessFunction.Scan.mainList.get(key).size()));
+					Statistics.scanPredictionList.put(key, valueList);
+				}
+				printToFile(argument++);	
+				/** we also call a function to calculate the mean of the overall reads writes 
+				 *  and scans 
+				 *  This is just to verify if each procedure is working the way it should */
+			/*	long sum = 0;
+				long readAvg, scanAvg, writeAvg;
+				try 
+				{
+						
+				}
+				catch (Exception e)
+				{
+					logger.debug("Exception in calculation ", e);
+				} */
+				overallPrint();
+
 			}
 			catch(Exception e)
-			{}
-			for (ArrayList<Integer> key: ProcessFunction.Read.mainList.keySet())
 			{
-				ArrayList<Float> valueList = new ArrayList<Float>();
-				average = ProcessFunction.Read.get_avg(ProcessFunction.Read.mainList.get(key));
-				stddev = ProcessFunction.Read.get_std_dev(ProcessFunction.Read.mainList.get(key), average);
-				valueList.add(average);
-				valueList.add(stddev);
-				valueList.add((float)(ProcessFunction.Read.mainList.get(key).size()));
-				Statistics.readPredictionList.put(key, valueList);
+				logger.debug("Error in calculation ",e);
 			}
-
-			for (ArrayList<Integer> key: ProcessFunction.Write.mainList.keySet())
-			{
-				ArrayList<Float> valueList = new ArrayList<Float>();
-				average = ProcessFunction.Write.get_avg(ProcessFunction.Write.mainList.get(key));
-				stddev = ProcessFunction.Write.get_std_dev(ProcessFunction.Write.mainList.get(key), average);
-				valueList.add(average);
-				valueList.add(stddev);
-				valueList.add((float)(ProcessFunction.Write.mainList.get(key).size()));
-				Statistics.writePredictionList.put(key, valueList);
-			}
-
-			for (ArrayList<Integer> key: ProcessFunction.Scan.mainList.keySet())
-			{
-				ArrayList<Float> valueList = new ArrayList<Float>();
-				average = ProcessFunction.Scan.get_avg(ProcessFunction.Scan.mainList.get(key));
-				stddev = ProcessFunction.Scan.get_std_dev(ProcessFunction.Scan.mainList.get(key), average);
-				valueList.add(average);
-				valueList.add(stddev);
-				valueList.add((float)(ProcessFunction.Scan.mainList.get(key).size()));
-				Statistics.scanPredictionList.put(key, valueList);
-			}
-			printToFile(argument++);	
 			try
 			{
 			/** We release the semaphore to ensure that other guys in the threadpool can use this
@@ -96,9 +122,26 @@ public class PredictionClass implements Runnable
 			sem.release();
 			}
 			catch(Exception e)
-			{}
+			{
+				logger.debug("Exception in releasing semaphore");
+			}
 		}
 
+	}
+
+
+	public void overallPrint()
+	{
+		try
+		{
+			PrintWriter write = new PrintWriter ("/root/overallStuff");
+			write.println("Overall Read: " + ProcessFunction.GRead.average + " Number of reads " + ProcessFunction.GRead.responseTimeList.size()) ;
+			write.println("Overall Scan: " + ProcessFunction.GScan.average + " Number of scans" + ProcessFunction.GScan.responseTimeList.size()) ;
+			//write.println("Overall Write: " + writeAvg);
+			write.close();
+		}
+		catch(Exception e)
+		{}
 	}
 
 	public void printToFile(int argument)
