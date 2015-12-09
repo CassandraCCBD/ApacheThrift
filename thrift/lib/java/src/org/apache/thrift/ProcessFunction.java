@@ -141,10 +141,23 @@ public abstract class ProcessFunction<I, T extends TBase> {
 	/* we make all scans sleep to see if it makes a difference for Reads */
 	try 
 	{
-		Thread.currentThread().sleep(10000);
+		double ratio =0;	
+		if (Profiling.numScan.get()!=0)
+			ratio = Profiling.numRead.get()/Profiling.numScan.get();
+	/*	if(ratio >= 1){
+			LOGGER.debug("Scan going to sleep");
+			Thread.currentThread().sleep(5000);
+		} 
+		else 
+		{
+			LOGGER.debug("Scan going through, ratio is " + ratio);
+			LOGGER.debug("CurrentRead - " + Profiling.numRead.get() + " currentScan " + Profiling.numScan.get());
+		} */
+		//Thread.currentThread().sleep(10000);
 	}
 	catch (Exception e)
 	{
+	
 	}
 /*	try{
 		LOGGER.debug("Sending to group3 ");
